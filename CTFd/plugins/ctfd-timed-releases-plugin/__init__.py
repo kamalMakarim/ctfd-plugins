@@ -1,1 +1,1 @@
-from src import load
+from .src import load
