@@ -278,6 +278,7 @@ def before_flush(session, flush_context, instances):
 
     for instance in session.dirty:
         if session.is_modified(instance):
+            print("Type of Model:", type(Model))
             if isinstance(instance, Model):
                 if get_history(instance, "hidden").has_changes() or get_history(instance, "banned").has_changes():
                     # The user/team hidden state has changed - update awards on all challenges this user has solved
