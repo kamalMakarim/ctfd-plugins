@@ -1,3 +1,34 @@
+FROM python:3.11-slim-bookworm AS build
+
+WORKDIR /opt/CTFd
+
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libffi-dev \
+        libssl-dev \
+        git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN mkdir -p /opt/CTFd/CTFd/plugins && \
+    git clone https://github.com/krzys-h/CTFd_first_blood /opt/CTFd/CTFd/plugins/firstblood && \
+    git clone https://github.com/alokmenghrajani/ctfd-timed-releases-plugin /opt/CTFd/CTFd/plugins/timed-release
+    
+COPY . /opt/CTFd
+
+RUN pip install --no-cache-dir -r requirements.txt \
+    && for d in CTFd/plugins/*; do \
+        if [ -f "$d/requirements.txt" ]; then \
+            pip install --no-cache-dir -r "$d/requirements.txt";\
+        fi; \
+    done;
+
+
 FROM python:3.11-slim-bookworm AS release
 WORKDIR /opt/CTFd
 
@@ -19,10 +50,6 @@ RUN useradd \
     && mkdir -p /var/log/CTFd /var/uploads \
     && chown -R 1001:1001 /var/log/CTFd /var/uploads /opt/CTFd \
     && chmod +x /opt/CTFd/docker-entrypoint.sh
-
-RUN mkdir -p /opt/CTFd/CTFd/plugins && \
-    git clone https://github.com/krzys-h/CTFd_first_blood /opt/CTFd/CTFd/plugins/firstblood && \
-    git clone https://github.com/alokmenghrajani/ctfd-timed-releases-plugin /opt/CTFd/CTFd/plugins/timed-release
 
 COPY --chown=1001:1001 --from=build /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
