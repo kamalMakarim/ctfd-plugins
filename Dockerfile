@@ -14,19 +14,18 @@ RUN apt-get update \
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Clone additional plugins
+# Clone the extra plugins into a temp directory
 RUN mkdir -p /tmp/extra_plugins && \
     git clone https://github.com/krzys-h/CTFd_first_blood /tmp/extra_plugins/firstblood && \
     git clone https://github.com/alokmenghrajani/ctfd-timed-releases-plugin /tmp/extra_plugins/timed-release
 
-# Copy your CTFd base (with default plugins)
+# Copy your app code (including default plugins)
 COPY . /opt/CTFd
 
-# Move extra plugins into the plugin folder
-RUN mkdir -p /opt/CTFd/CTFd/plugins && \
-    cp -r /tmp/extra_plugins/* /opt/CTFd/CTFd/plugins/
+# Copy the cloned plugins into the real CTFd plugin folder
+RUN cp -r /tmp/extra_plugins/* /opt/CTFd/CTFd/plugins/
 
-# Install dependencies
+# Install requirements
 RUN pip install --no-cache-dir -r requirements.txt \
     && for d in CTFd/plugins/*; do \
         if [ -f "$d/requirements.txt" ]; then \
