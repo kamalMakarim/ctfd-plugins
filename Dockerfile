@@ -2,7 +2,6 @@ FROM python:3.11-slim-bookworm AS build
 
 WORKDIR /opt/CTFd
 
-# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
@@ -15,18 +14,25 @@ RUN apt-get update \
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN mkdir -p /opt/CTFd/CTFd/plugins && \
-    git clone https://github.com/krzys-h/CTFd_first_blood /opt/CTFd/CTFd/plugins/firstblood && \
-    git clone https://github.com/alokmenghrajani/ctfd-timed-releases-plugin /opt/CTFd/CTFd/plugins/timed-release
-    
+# Clone additional plugins
+RUN mkdir -p /tmp/extra_plugins && \
+    git clone https://github.com/krzys-h/CTFd_first_blood /tmp/extra_plugins/firstblood && \
+    git clone https://github.com/alokmenghrajani/ctfd-timed-releases-plugin /tmp/extra_plugins/timed-release
+
+# Copy your CTFd base (with default plugins)
 COPY . /opt/CTFd
 
+# Move extra plugins into the plugin folder
+RUN mkdir -p /opt/CTFd/CTFd/plugins && \
+    cp -r /tmp/extra_plugins/* /opt/CTFd/CTFd/plugins/
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt \
     && for d in CTFd/plugins/*; do \
         if [ -f "$d/requirements.txt" ]; then \
-            pip install --no-cache-dir -r "$d/requirements.txt";\
+            pip install --no-cache-dir -r "$d/requirements.txt"; \
         fi; \
-    done;
+    done
 
 
 FROM python:3.11-slim-bookworm AS release
